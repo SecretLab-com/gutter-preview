@@ -36,8 +36,9 @@ export const ImageCache = {
         } else {
             try {
                 const absoluteImageUrl = url.parse(absoluteImagePath);
+                const anExt = absoluteImageUrl.pathname ? path.parse(absoluteImageUrl.pathname).ext : 'png';
                 const tempFile = tmp.fileSync({
-                    postfix: absoluteImageUrl.pathname ? path.parse(absoluteImageUrl.pathname).ext : 'png',
+                    postfix: absoluteImageUrl.pathname.endsWith('.tsx') ? anExt+'.svg' : anExt,
                 });
                 const filePath = tempFile.name;
                 const promise = new Promise<string>((resolve, reject) => {
@@ -76,7 +77,28 @@ export const ImageCache = {
                 ImageCache.set(absoluteImagePath, promise);
                 const injectStyles = (path: string) => {
                     return new Promise<string>((res, rej) => {
-                        if (path.endsWith('.svg') && currentColorForClojure && currentColorForClojure != '') {
+                        if (path.endsWith('.tsx.svg')) 
+                        {
+                            const read = promisify(fs.readFile);
+                            const write = promisify(fs.writeFile);
+
+                            read(path)
+                                .then((data) => {
+                                    const original = data.toString('utf-8');
+                                    return original
+                                            // .replace(/([\n\r]\s+)\*(\s+)/g,"$1$2")
+                                            .replace(/[\n\r][\s?/]*\*/g,"\n")
+                                            .replace(/.*?ORIGINAL SVG.*?-{10,}(.*?)-{10,}.*/s,"$1");
+                                })
+                                .then((data) => {
+                                    return data.replace('<svg', `<svg style="color:${currentColorForClojure}"`);
+                                })
+                                .then((data) => {
+                                    return write(path, data);
+                                })
+                                .then(() => res(path))
+                                .catch((err) => rej(err));
+                        } else if (path.endsWith('.svg') && currentColorForClojure && currentColorForClojure != '') {
                             const read = promisify(fs.readFile);
                             const write = promisify(fs.writeFile);
 
@@ -90,7 +112,8 @@ export const ImageCache = {
                                 })
                                 .then(() => res(path))
                                 .catch((err) => rej(err));
-                        } else {
+                        } else 
+                        {
                             res(path);
                         }
                     });

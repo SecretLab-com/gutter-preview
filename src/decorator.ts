@@ -125,7 +125,7 @@ export function imageDecorator(
                         return new vscode.Hover(contents, matchingDecoratorAndItem.decoration.range);
                     };
                     var imageWithSize = (markedString, result) => {
-                        markedString += `  \r\n${result.width}x${result.height}`;
+                        markedString += `  \r\nSize: ${result.width}x${result.height}`;
                         const contents = new vscode.MarkdownString(markedString);
                         contents.isTrusted = true;
                         return new vscode.Hover(contents, matchingDecoratorAndItem.decoration.range);
